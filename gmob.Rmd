@@ -1,0 +1,136 @@
+---
+title: "Covid cases and Mobility in six selected countries"
+author: "Björn Piltz"
+date: "09.05.2019"
+output:
+  tufte::tufte_handout:
+    number_sections: no
+    toc: yes
+  tufte::tufte_html:
+    number_sections: no
+    toc: yes
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(readr)
+library(plotly)
+library(ggplot2)
+library(zoo)
+
+library(extrafont)
+extrafont::font_import(prompt = FALSE)
+
+getOutputFormat <- function() {
+  output <- rmarkdown:::parse_yaml_front_matter(
+    readLines(knitr::current_input())
+    )$output
+  if (is.list(output)){
+    return(names(output)[1])
+  } else {
+    return(output[1])
+  }
+}
+
+if (grepl("tufte_html", getOutputFormat())){
+  
+  our_theme <- theme_minimal() + 
+    theme(text=element_text(family="et-book"), 
+          plot.background = element_rect(fill = "#fffff8"),
+          panel.background = element_rect(fill = "#fffff8"))
+}else{
+  library(extrafont)
+  loadfonts(device = "win")
+library(extrafont)
+  our_theme <- theme_minimal() + 
+    theme(text=element_text(family="ETBembo"))
+}
+
+plot_fun <- function(gg){
+  if (grepl("html", getOutputFormat())){
+    ggplotly(gg)
+  } else {gg}
+}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## TEMP
+
+
+```{r tmp}
+  #library(extrafont)
+#  loadfonts(device = "win")
+```
+```{r collect_data, include=FALSE, cache=TRUE}
+library(tidyverse)
+library(readr)
+countries <- c("Sweden", "Germany", "Denmark", "Belgium", "France", "Czechia")
+
+cols <- c("country", "Date", "Retail & recreation",
+          "Grocery & pharmacy",
+          "Parks", 
+          "Transit stations", 
+          "Workplaces",
+          "Residential_change")
+
+#download.file("https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv", "data/Global_Mobility_Report.csv")
+Global_Mobility_Report <- read_csv("data/Global_Mobility_Report.csv", 
+                                   col_types = cols(census_fips_code = col_skip(), 
+                                                    country_region_code = col_skip(), 
+                                                    iso_3166_2_code = col_skip()))
+
+
+
+All_Mobility_Data <- Global_Mobility_Report %>% 
+  dplyr::select(- sub_region_2) %>%
+  dplyr::select(- metro_area) %>% 
+  filter( is.na(sub_region_1)) %>% 
+  select(-sub_region_1)
+
+colnames(All_Mobility_Data) <- cols
+
+Subset_Mobility_Data_long <- All_Mobility_Data %>% 
+  gather(Mobility_Type, Percent_Change, -c(Date, country)) %>% 
+  filter(country %in% countries) 
+
+write_csv(Subset_Mobility_Data_long, "data/Subset_Mobility_Data_long.csv")
+```
+
+## Introduction - Google mobility data for Sweden
+.
+```{r plot1, include=TRUE, echo=FALSE, message = FALSE, warning = FALSE}
+Subset_Mobility_Data_long <- read_csv("data/Subset_Mobility_Data_long.csv")
+  
+g <- ggplot(Subset_Mobility_Data_long %>% 
+              filter(country == "Sweden")%>%
+              filter(Mobility_Type != "Parks") ,
+            aes(x = Date, 
+                y = rollmean(Percent_Change, 7, na.pad=TRUE, align = "right"), 
+                color = Mobility_Type)) + 
+  geom_line() + 
+  theme_light() +
+  ggtitle("Google mobility report - Sweden") +
+  ylab("Change from baseline") 
+
+#ggplotly(g)
+plot_fun(g)
+```
+.
+```{r plot2}
+Subset_Mobility_Data_long <- read_csv("data/Subset_Mobility_Data_long.csv")
+  
+g <- ggplot(Subset_Mobility_Data_long %>% 
+              filter(country == "Sweden")%>%
+              filter(Mobility_Type != "Parks") ,
+            aes(x = Date, 
+                y = rollmean(Percent_Change, 7, na.pad=TRUE, align = "right"), 
+                color = Mobility_Type)) + 
+  geom_line() + 
+  our_theme +
+  ggtitle("Google mobility report - Sweden") +
+  ylab("Change from baseline") 
+
+#ggplotly(g)
+plot_fun(g)
+```
