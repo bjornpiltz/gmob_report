@@ -24,12 +24,24 @@ df <- read_csv("data/jhu.csv",
 df%>% 
   rename(Country = location)-> df
 
-g <- ggplot(df,# %>% filter(Country == "Czech Republic") , 
+# normalize by population
+#download.file("https://github.com/owid/covid-19-data/raw/master/public/data/jhu/locations.csv", "data/jhu_pop.csv")
+df_pop <- read_csv("data/jhu_pop.csv")
+df_pop%>% 
+  rename(Country = location)-> df_pop
+df$new_cases_per_cap <- df$new_cases / df_pop$population[match(df$Country, df_pop$Country/100000)]
+
+
+g <- ggplot(transform(df,Country=factor(Country,levels=countries)),# %>% filter(Country == "Czech Republic") , 
             aes(x = date, 
-                y = rollmean(new_cases, 14, na.pad=TRUE, align = "right"), 
+                y = rollmean(new_cases_per_cap, 14, na.pad=TRUE, align = "right"), 
                 color = Country)) + 
   geom_line() + 
-  our_theme 
+  ylab("Cases per 100,000") +
+  #scale_y_continuous(labels = scales::percent_format( scale = 1.0, accuracy = 1), limits = c(-60, 125)) +
+  scale_x_date(date_breaks = "1 month", limits = as.Date(c('2020-10-01','2020-12-02'))) +
+  our_theme +
+  facet_wrap(~ Country)
 ggplotly(g)
 
 n = 7
@@ -60,18 +72,24 @@ aes_BEL = aes(xmin = as.Date('2020-11-02'), xmax = as.Date('2020-12-01'), ymin =
 aes_GER = aes(xmin = as.Date('2020-11-02'), xmax = as.Date('2020-12-01'), ymin = -Inf, ymax = Inf)
 aes_SWE = aes(xmin = as.Date('2020-11-08'), xmax = as.Date('2020-12-01'), ymin = -Inf, ymax = Inf)
 aes_FRA = aes(xmin = as.Date('2020-10-30'), xmax = as.Date('2020-12-01'), ymin = -Inf, ymax = Inf)
+
+#A 30-day state of emergency was declared as of 5 October.
+#As of 3 December, the night-time curfew is being lifted, as are the bans on Sunday shopping and consuming alcohol in public.
+aes_CZR = aes(xmin = as.Date('2020-10-05'), xmax = as.Date('2020-11-23'), ymin = -Inf, ymax = Inf)
 #library(plyr)  
 g<-ggplot(df3 ,#%>% filter(Country  %in% c("Belgium", "France", "Czech Republic")), #g<-ggplot(df2,
           aes(x = date, 
               #           y = rollmean(rate, n, na.pad=TRUE, align = "right"), 
               y = rate, 
               color = Country)) +
-  geom_rect(data=df3[df3["Country"]=="Belgium",], aes_BEL, fill = '#F0F0F0') + 
-  geom_rect(data=df3[df3["Country"]=="Germany",], aes_GER, fill = '#F0F0F0') + 
-  geom_rect(data=df3[df3["Country"]=="Sweden",], aes_SWE, fill = '#F0F0F0') + 
-  geom_rect(data=df3[df3["Country"]=="France",], aes_FRA, fill = '#909090') + 
+#  geom_rect(data=df3[df3["Country"]=="Belgium",], aes_BEL, fill = '#B0B0B0') + 
+#  geom_rect(data=df3[df3["Country"]=="Germany",], aes_GER, fill = '#F0F0F0') + 
+#  geom_rect(data=df3[df3["Country"]=="Sweden",], aes_SWE, fill = '#F0F0F0') + 
+#  geom_rect(data=df3[df3["Country"]=="France",], aes_FRA, fill = '#B0B0B0') + 
+#  geom_rect(data=df3[df3["Country"]=="Czech Republic",], aes_CZR, fill = '#B0B0B0') + 
   geom_hline(yintercept=0, linetype="dashed") +
   geom_smooth(method="auto" , se=TRUE, span = 0.3, aes(y=rate), level = 0.95) +
+  #geom_line(aes(y=new_cases/max(new_cases))) +
   ylab("Rate of change") +
   scale_y_continuous(labels = scales::percent_format( scale = 1.0, accuracy = 1), limits = c(-60, 125)) +
   scale_x_date(date_breaks = "1 month", limits = as.Date(c('2020-10-01','2020-12-02'))) +
