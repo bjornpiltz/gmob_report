@@ -7,19 +7,21 @@ author:
   - Björn Piltz
 date: "07.12.2020"
 output:
-  tufte::tufte_html:
-    number_sections: no
-    toc: yes
-    fig_height: 6
   tufte::tufte_handout:
     number_sections: no
     toc: yes
     fig_height: 3.5
     extra_dependencies: ["float"]
+  tufte::tufte_html:
+    number_sections: no
+    toc: yes
+    fig_height: 6
 always_allow_html: yes
 ---
 
-The following graphs are based on Covid-19 cases data from Johns Hopkins University and Google mobility data for the time period Oct 1st - Dec 4th, 2020.
+
+
+The following graphs are based on Covid-19 cases data from Johns Hopkins University and Google mobility data for the time period Oct 1st - Dec 4th, 2020.^[For an up to date pdf of this document, go [here](https://github.com/bjornpiltz/gmob_report/raw/main/gmob.pdf).] ^[For an interactive web version, go to https://rpubs.com/bjornpiltz/c19_cases_mob.]
 
 ```{r setup, include=FALSE}
 library(tidyverse)
